@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import { useAuth } from '../util/auth.ts';
 import {useNavigate} from "react-router";
 
@@ -13,7 +13,13 @@ export const LoginForm = () => {
     const [validationErrors, setValidationErrors] = useState<ValidationError>({});
     const {handleLogin} = {...useAuth()}
     const navigate = useNavigate();
+    const authContext = useAuth()
 
+    useEffect(() => {
+        if (authContext.currentUser) {
+            navigate("/home")
+        }
+    }, [authContext, navigate])
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -31,8 +37,6 @@ export const LoginForm = () => {
         }
 
         await handleLogin(email, password)
-
-        navigate("/home");
     };
 
     return (

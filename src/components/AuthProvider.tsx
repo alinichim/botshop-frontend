@@ -1,4 +1,4 @@
-import {PropsWithChildren, useState} from "react";
+import {PropsWithChildren, useEffect, useState} from "react";
 import axios, {HttpStatusCode} from "axios";
 import {BOTSHOP_SERVER_URL} from "../constants.ts";
 import {jwtDecode} from "jwt-decode";
@@ -9,6 +9,22 @@ type AuthProviderProps = PropsWithChildren;
 export const AuthProvider = ({ children }: AuthProviderProps) => {
     const [authToken, setAuthToken] = useState<string | null>();
     const [currentUser, setCurrentUser] = useState<User | null>();
+    const [loading, setLoading] = useState<boolean>(true);
+
+    useEffect(() => {
+        const token = localStorage.getItem("token");
+        if (token) {
+            try {
+                const user = jwtDecode<User>(token);
+                setCurrentUser({...user})
+                setAuthToken(token)
+            } catch (e) {
+                console.error("Invalid token", e);
+                localStorage.removeItem("token");
+            }
+        }
+        setLoading(false);
+    }, []);
 
     const handleLogin = async (email: string, password: string) => {
         try {
@@ -26,6 +42,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
             const user = jwtDecode<User>(token);
             setCurrentUser({...user})
             setAuthToken(token)
+            localStorage.setItem("token", token)
         } catch (error) {
             setAuthToken(null)
             setCurrentUser(null)
@@ -37,6 +54,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     const handleLogout = async () => {
         setCurrentUser(null);
         setAuthToken(null);
+        localStorage.removeItem("token");
     }
 
     return <AuthContext.Provider
@@ -45,5 +63,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
             currentUser: currentUser,
             handleLogin: handleLogin,
             handleLogout: handleLogout,
+            loading: loading,
         }}>{children}</AuthContext.Provider>
 }
